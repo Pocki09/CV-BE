@@ -276,3 +276,42 @@ export const deleteJobDel = async (req: AccountRequest, res: Response) => {
     });
   }
 };
+
+export const list = async (req: Request, res: Response) => {
+  let limitItems = 12;
+  if (req.query.limitItems) {
+    limitItems = parseInt(`${req.query.limitItems}`);
+  }
+
+  const companyList = await AccountCompany.find({}).limit(limitItems);
+
+  const companyListFinal = [];
+
+  for(const item of companyList) {
+    const dataItemFinal = {
+      id: item.id,
+      companyName: item.companyName,
+      logo: item.logo,
+      cityName: "",
+      totalJob: 0
+    }
+
+    const city = await City.findOne({
+      _id: item.city
+    })
+    dataItemFinal.cityName = `${city?.name}`;
+
+    const totalJob = await job.countDocuments({
+      companyId: item.id
+    })
+    dataItemFinal.totalJob = totalJob;
+
+    companyListFinal.push(dataItemFinal);
+  }
+
+  res.json({
+    code: "success",
+    message: "Lấy danh sách công ty thành công!",
+    companyList: companyListFinal
+  })
+}
