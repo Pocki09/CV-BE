@@ -283,11 +283,29 @@ export const list = async (req: Request, res: Response) => {
     limitItems = parseInt(`${req.query.limitItems}`);
   }
 
-  const companyList = await AccountCompany.find({}).limit(limitItems);
+  let page = 1;
+  if (req.query.page) {
+    const currentPage = parseInt(`${req.query.page}`);
+    if (currentPage > 0) {
+      page = currentPage;
+    }
+  }
+  const totalRecord = await job.countDocuments({});
+  const totalPage = Math.ceil(totalRecord / limitItems);
+  const skip = (page - 1) * limitItems;
+
+
+  const companyList = await AccountCompany
+    .find({})
+    .sort({
+      createdAt: "desc"
+    })
+    .limit(limitItems)
+    .skip(skip);
 
   const companyListFinal = [];
 
-  for(const item of companyList) {
+  for (const item of companyList) {
     const dataItemFinal = {
       id: item.id,
       companyName: item.companyName,
@@ -312,6 +330,81 @@ export const list = async (req: Request, res: Response) => {
   res.json({
     code: "success",
     message: "Lấy danh sách công ty thành công!",
-    companyList: companyListFinal
+    companyList: companyListFinal,
+    totalPage: totalPage
   })
+}
+
+export const detail = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const record = await AccountCompany.findOne({
+      _id: id
+    })
+
+    if (!record) {
+      res.json({
+        code: "error",
+        message: "Thất bại!"
+      })
+      return;
+    }
+
+    // Thông tin công ty
+    const companyDetail = {
+      id: record.id,
+      logo: record.logo,
+      companyName: record.companyName,
+      address: record.address,
+      companyModel: record.companyModel,
+      companyEmployees: record.companyEmployees,
+      workingTime: record.workingTime,
+      workOvertime: record.workOvertime,
+      description: record.description,
+    };
+
+    // Danh sách công việc
+    const jobs = await job
+      .find({
+        companyId: id
+      })
+      .sort({
+        createdAt: "desc"
+      });
+
+    const city = await City.findOne({
+      _id: record.city
+    })
+
+    const dataFinal = [];
+
+    for (const item of jobs) {
+      dataFinal.push({
+        id: item.id,
+        companyLogo: record.logo,
+        title: item.title,
+        companyName: record.companyName,
+        salaryMin: item.salaryMin,
+        salaryMax: item.salaryMax,
+        position: item.position,
+        workingForm: item.workingForm,
+        cityName: city?.name,
+        technologies: item.technologies
+      });
+    }
+
+    res.json({
+      code: "success",
+      message: "Thành công!",
+      companyDetail: companyDetail,
+      jobs: dataFinal
+    })
+  } catch (error) {
+    console.log(error);
+    res.json({
+      code: "error",
+      message: "Thất bại!"
+    })
+  }
 }

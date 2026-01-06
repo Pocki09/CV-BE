@@ -6,6 +6,7 @@ import City from "../models/city.model";
 export const search = async (req: Request, res: Response) => {
   const dataFinal = [];
   let totalPage = 1;
+  let totalRecord = 0;
 
   if (Object.keys(req.query).length > 0) {
     const find: any = {};
@@ -58,7 +59,7 @@ export const search = async (req: Request, res: Response) => {
         page = currentPage;
       }
     }
-    const totalRecord = await job.countDocuments(find);
+    totalRecord = await job.countDocuments(find);
     totalPage = Math.ceil(totalRecord / limitItems);
     if (page > totalPage) {
       page = 1;
@@ -109,6 +110,7 @@ export const search = async (req: Request, res: Response) => {
     code: "success",
     message: "Thành công!",
     jobs: dataFinal,
-    totalPage: totalPage
+    totalPage: totalPage,
+    totalRecord: totalRecord
   });
 };

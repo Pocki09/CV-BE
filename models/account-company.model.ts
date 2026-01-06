@@ -1,3 +1,4 @@
+import { any } from "joi";
 import mongoose from "mongoose";
 
 const schema = new mongoose.Schema(
@@ -13,6 +14,8 @@ const schema = new mongoose.Schema(
     phone: String,
     description: String,
     logo: String,
+    companyEmployees: any,
+    workOvertime: any,
   },
   {
     timestamps: true, // Tự động sinh ra trường createdAt và updatedAt

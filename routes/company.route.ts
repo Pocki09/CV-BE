@@ -12,7 +12,7 @@ const upload = multer({
 });
 
 router.post(
-  '/register', 
+  '/register',
   companyValidate.registerPost,
   companyController.registerPost
 );
@@ -67,3 +67,8 @@ router.get(
   companyController.list
 )
 export default router;
+
+router.get(
+  '/detail/:id', 
+  companyController.detail
+);
