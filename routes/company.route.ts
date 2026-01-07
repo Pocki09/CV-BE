@@ -90,3 +90,9 @@ router.patch(
   authMiddleware.verifyTokenCompany,
   companyController.changeStatusPatch
 );
+
+router.delete(
+  '/cv/delete/:id',
+  authMiddleware.verifyTokenCompany,
+  companyController.deleteCVDel
+);
