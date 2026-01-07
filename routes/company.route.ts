@@ -69,6 +69,24 @@ router.get(
 export default router;
 
 router.get(
-  '/detail/:id', 
+  '/detail/:id',
   companyController.detail
+);
+
+router.get(
+  '/cv/list',
+  authMiddleware.verifyTokenCompany,
+  companyController.listCV
+);
+
+router.get(
+  '/cv/detail/:id',
+  authMiddleware.verifyTokenCompany,
+  companyController.detailCV
+);
+
+router.patch(
+  '/cv/change-status',
+  authMiddleware.verifyTokenCompany,
+  companyController.changeStatusPatch
 );

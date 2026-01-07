@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { AccountRequest } from "../interfaces/request.interface";
 import job from "../models/job.model";
 import City from "../models/city.model";
+import CV from "../models/cv.model";
 
 export const registerPost = async (req: Request, res: Response) => {
   const { companyName, email, password } = req.body;
@@ -408,3 +409,180 @@ export const detail = async (req: Request, res: Response) => {
     })
   }
 }
+
+export const listCV = async (req: AccountRequest, res: Response) => {
+  const companyId = req.account.id;
+
+  const listJob = await job
+    .find({
+      companyId: companyId
+    });
+
+  const listJobId = listJob.map(item => item.id);
+
+  const listCV = await CV
+    .find({
+      jobId: { $in: listJobId }
+    })
+    .sort({
+      createdAt: "desc"
+    })
+
+  const dataFinal = [];
+
+  for (const item of listCV) {
+    const dataItemFinal = {
+      id: item.id,
+      jobTitle: "",
+      fullName: item.fullName,
+      email: item.email,
+      phone: item.phone,
+      jobSalaryMin: 0,
+      jobSalaryMax: 0,
+      jobPosition: "",
+      jobWorkingForm: "",
+      viewed: item.viewed,
+      status: item.status,
+    };
+
+    const infoJob = await job.findOne({
+      _id: item.jobId
+    })
+
+    if (infoJob) {
+      dataItemFinal.jobTitle = `${infoJob.title}`;
+      dataItemFinal.jobSalaryMin = parseInt(`${infoJob.salaryMin}`);
+      dataItemFinal.jobSalaryMax = parseInt(`${infoJob.salaryMax}`);
+      dataItemFinal.jobPosition = `${infoJob.position}`;
+      dataItemFinal.jobWorkingForm = `${infoJob.workingForm}`;
+    }
+
+    dataFinal.push(dataItemFinal);
+  }
+
+  res.json({
+    code: "success",
+    message: "Lấy danh sách CV thành công!",
+    listCV: dataFinal
+  })
+}
+
+export const detailCV = async (req: AccountRequest, res: Response) => {
+  try {
+    const companyId = req.account.id;
+    const cvId = req.params.id;
+
+    const infoCV = await CV.findOne({
+      _id: cvId
+    })
+
+    if (!infoCV) {
+      res.json({
+        code: "error",
+        message: "Thất bại"
+      })
+      return;
+    }
+
+    const infoJob = await job.findOne({
+      _id: infoCV.jobId,
+      companyId: companyId
+    })
+
+    if (!infoJob) {
+      res.json({
+        code: "error",
+        message: "Thất bại"
+      })
+      return;
+    }
+
+    const dataFinalCV = {
+      fullName: infoCV.fullName,
+      email: infoCV.email,
+      phone: infoCV.phone,
+      fileCV: infoCV.fileCV,
+    };
+
+    const dataFinalJob = {
+      id: infoJob.id,
+      title: infoJob.title,
+      salaryMin: infoJob.salaryMin,
+      salaryMax: infoJob.salaryMax,
+      position: infoJob.position,
+      workingForm: infoJob.workingForm,
+      technologies: infoJob.technologies,
+    };
+
+    // Cập nhật trạng thái thành đã xem
+    await CV.updateOne({
+      _id: cvId
+    }, {
+      viewed: true
+    })
+
+    res.json({
+      code: "success",
+      message: "Thành công!",
+      infoCV: dataFinalCV,
+      infoJob: dataFinalJob
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      code: "error",
+      message: "Id không hợp lệ!"
+    })
+  }
+}
+
+export const changeStatusPatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const companyId = req.account.id;
+    const status = req.body.action;
+    const cvId = req.body.id;
+
+    const infoCV = await CV.findOne({
+      _id: cvId
+    })
+
+    if (!infoCV) {
+      res.json({
+        code: "error",
+        message: "Thất bại!"
+      })
+      return;
+    }
+
+    const infoJob = await job.findOne({
+      _id: infoCV.jobId,
+      companyId: companyId
+    })
+
+    if (!infoJob) {
+      res.json({
+        code: "error",
+        message: "Thất bại!"
+      })
+      return;
+    }
+
+    await CV.updateOne({
+      _id: cvId
+    }, {
+      status: status
+    })
+
+    res.json({
+      code: "success",
+      message: "Thành công!"
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      code: "error",
+      message: "Id không hợp lệ!"
+    })
+  }
+}
+
